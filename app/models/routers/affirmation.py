@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
-from ..models.affirmation import Affirmation, AffirmationCreate, AffirmationInDB
-from ..database import db
+from app.models.affirmation import Affirmation, AffirmationCreate, AffirmationInDB
+from app.database import db
 from bson import ObjectId
 from datetime import datetime
 

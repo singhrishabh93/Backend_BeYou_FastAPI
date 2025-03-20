@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import affirmation
+from .models.routers import affirmation
 
 app = FastAPI(
     title="BeYou API",
