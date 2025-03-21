@@ -2,12 +2,11 @@ import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from .config import MONGODB_URL, DB_NAME
 
-# For Railway deployment - with adjusted SSL settings
+# For Railway deployment
 client = AsyncIOMotorClient(
     MONGODB_URL,
     tlsCAFile=certifi.where(),
     serverSelectionTimeoutMS=10000,
-    ssl=True,
-    ssl_cert_reqs='CERT_NONE'  # Try this for Railway deployment
+    tlsAllowInvalidCertificates=True
 )
 db = client[DB_NAME]
