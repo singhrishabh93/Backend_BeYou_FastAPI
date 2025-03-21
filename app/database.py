@@ -1,8 +1,8 @@
 import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
-from .config import MONGODB_URL, DB_NAME
 import logging
 import sys
+import os
 
 # Set up logging
 logging.basicConfig(
@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 # Initialize client and db as None in case connection fails
 client = None
 db = None
+
+# Hardcoded MongoDB connection (only for Railway deployment)
+if os.getenv("RAILWAY_ENVIRONMENT") == "production":
+    MONGODB_URL = "mongodb+srv://singhrishabh1670:020502@beyou.4anrb.mongodb.net/?retryWrites=true&w=majority&ssl=true&authSource=admin"
+    DB_NAME = "beyou_db"
+    logger.info("Using hardcoded MongoDB connection for Railway")
+else:
+    # For local development, use config
+    from .config import MONGODB_URL, DB_NAME
 
 try:
     # Attempt to connect to MongoDB
