@@ -16,5 +16,5 @@ COPY . .
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Start application using PORT from Railway
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
+# Start application with PORT environment variable
+CMD echo "Starting app on port $PORT" && uvicorn app.main:app --host 0.0.0.0 --port $PORT
