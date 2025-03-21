@@ -1,14 +1,22 @@
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from .models.routers import affirmation
-from .database import db, client
+import sys
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging to stdout
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
 logger = logging.getLogger(__name__)
+
+# Print environment variables for debugging (except sensitive ones)
+for key, value in os.environ.items():
+    if not any(secret in key.lower() for secret in ['password', 'secret', 'key', 'token']):
+        logger.info(f"ENV: {key}={value}")
 
 app = FastAPI(
     title="BeYou API",
@@ -19,59 +27,24 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins in development
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
 async def root():
-    """Root endpoint, also used for healthcheck by Railway"""
+    """Root endpoint used for healthcheck"""
+    logger.info("Health check endpoint called")
     return {"message": "Welcome to BeYou API", "status": "online"}
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint to verify database connection"""
-    try:
-        # Test MongoDB connection
-        if db and client:
-            client.admin.command('ping')
-            return {"status": "healthy", "database": "connected"}
-        else:
-            return JSONResponse(
-                content={"status": "unhealthy", "database": "not initialized"}, 
-                status_code=500
-            )
-    except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        return JSONResponse(
-            content={"status": "unhealthy", "error": str(e)}, 
-            status_code=500
-        )
-
-@app.middleware("http")
-async def db_session_middleware(request: Request, call_next):
-    """Middleware to check MongoDB connection before handling requests"""
-    if request.url.path in ['/', '/health']:
-        # Skip DB check for healthcheck endpoints
-        return await call_next(request)
-    
-    try:
-        if not db:
-            return JSONResponse(
-                content={"detail": "Database connection not available"}, 
-                status_code=503
-            )
-        
-        response = await call_next(request)
-        return response
-    except Exception as e:
-        logger.error(f"Error in middleware: {str(e)}")
-        return JSONResponse(
-            content={"detail": str(e)}, 
-            status_code=500
-        )
-
-# Include routers
-app.include_router(affirmation.router)
+# Try to load other routes only if this basic app works
+try:
+    from .models.routers import affirmation
+    app.include_router(affirmation.router)
+    logger.info("Successfully loaded affirmation router")
+except Exception as e:
+    logger.error(f"Failed to load affirmation router: {str(e)}")
+    # Continue running even if router loading fails
+    pass

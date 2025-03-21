@@ -2,36 +2,42 @@ import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from .config import MONGODB_URL, DB_NAME
 import logging
+import sys
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 logger = logging.getLogger(__name__)
 
-# Check if MongoDB URL is provided
-if not MONGODB_URL:
-    logger.error("MONGODB_URL environment variable is not set. Using localhost fallback.")
-    MONGODB_URL = "mongodb://localhost:27017"
-
-logger.info(f"Connecting to database: {DB_NAME}")
+# Initialize client and db as None in case connection fails
+client = None
+db = None
 
 try:
-    # Create client connection
-    client = AsyncIOMotorClient(
-        MONGODB_URL,
-        tlsCAFile=certifi.where(),
-        serverSelectionTimeoutMS=30000,
-        connectTimeoutMS=30000,
-        socketTimeoutMS=30000,
-        tlsAllowInvalidCertificates=True
-    )
-    
-    # Initialize database
-    db = client[DB_NAME]
-    
-    # Test connection in a non-blocking way (don't do this at import time)
-    logger.info("MongoDB client initialized (connection will be tested on first request)")
-    
+    # Attempt to connect to MongoDB
+    if MONGODB_URL:
+        logger.info(f"Attempting to connect to MongoDB database: {DB_NAME}")
+        
+        # Create client connection
+        client = AsyncIOMotorClient(
+            MONGODB_URL,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=30000,
+            connectTimeoutMS=30000,
+            socketTimeoutMS=30000,
+            tlsAllowInvalidCertificates=True
+        )
+        
+        # Initialize database
+        db = client[DB_NAME]
+        
+        logger.info("MongoDB client initialized")
+    else:
+        logger.warning("MONGODB_URL not set - database functionality will not be available")
+        
 except Exception as e:
     logger.error(f"Failed to initialize MongoDB client: {str(e)}")
-    # Don't raise exception at import time - this would prevent app from starting
-    db = None
+    # Continue without database - API can still serve the root endpoint
