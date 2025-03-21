@@ -1,0 +1,13 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+
+[vars]
+MONGODB_URL = "mongodb+srv://singhrishabh1670:020502@beyou.4anrb.mongodb.net/?retryWrites=true&w=majority&ssl=true&authSource=admin"
+DB_NAME = "beyou_db"
+RAILWAY_ENVIRONMENT = "production"
